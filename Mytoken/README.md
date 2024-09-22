@@ -1,16 +1,16 @@
 
 ## Description
-This Solidity program demonstrates the creation of a token while utilizing the `require()`, `assert()`, and `revert()` statements for error handling and validation. The contract includes two main functions:
+The myToken smart contract is a simple token implementation written in Solidity. The token is named WILDCORES with the symbol WCR. It allows for basic token management, including minting new tokens and burning existing tokens. The contract manages token balances through a mapping and tracks the total supply of tokens.
 - **Mint function**: Increases the token supply by adding tokens to a specified address.
 - **Burn function**: Reduces the token supply by removing tokens from a specified address, with safety checks in place.
 
 ## Functions
 
 ### 1. `mint(address _address, uint _value)`
-This function adds tokens to the specified `_address` and increases the total token supply. It uses `require()` to ensure the transaction is valid.
+This function adds tokens to the specified `_address` and increases the total token supply.
 
 ### 2. `burn(address _address, uint _value)`
-This function removes tokens from the specified `_address` and decreases the total supply. It uses `require()` to check if the address has enough tokens to burn and employs `assert()` to confirm the total supply is reduced correctly.
+This function removes tokens from the specified `_address` and decreases the total supply. It uses `require()` to check if the address has enough tokens to burn 
 
 ## Getting Started
 
