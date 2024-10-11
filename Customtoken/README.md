@@ -3,43 +3,43 @@
 
 ## Overview
 
-The `WILDCORES` token is a simple ERC20-like token contract implemented in Solidity for the Ethereum blockchain. This contract allows the owner to mint new tokens, and users to burn and transfer their tokens. It provides a straightforward mechanism for managing token balances while enforcing ownership control for minting.
+The `WILDCORES` token is a simple ERC20-like token contract implemented in Solidity for the Ethereum blockchain. This contract allows the owner to mint new tokens, and users to burn and transfer their tokens. It leverages OpenZeppelin's ERC20 and Ownable contracts to provide secure and efficient token management, with ownership control over minting operations.
 
 ## Features
 
 - **Token Name**: WILDCORES
 - **Token Symbol**: WCR
-- **Minting**: Only the contract owner can mint new tokens.
-- **Burning**: Any user can burn their tokens to decrease their balance and the total supply.
-- **Transferring**: Any user can transfer tokens to another address.
+- **Minting**: Only the contract owner can mint new tokens using the `mint()` function.
+- **Burning**: Any user can burn their tokens to decrease their balance and the total supply using the `burn()` function.
+- **Transferring**: Any user can transfer tokens to another address using the `transfer()` function.
 
 ## Contract Structure
 
 ### State Variables
 
-- **`tokenName`**: The name of the token, set to "WILDCORES".
-- **`tokenAbbrv`**: The abbreviation of the token, set to "WCR".
-- **`totalSupply`**: The total supply of tokens in circulation, initially set to 0.
-- **`owner`**: The address of the contract owner, who has special privileges.
-- **`balances`**: A mapping to track the token balances of each address.
+- **`name`**: The name of the token, set to "WILDCORES".
+- **`symbol`**: The abbreviation of the token, set to "WCR".
+- **`owner`**: The address of the contract owner, who has special privileges (set upon deployment).
 
-### Modifiers
+### Inherited OpenZeppelin Contracts
 
-- **`onlyOwner`**: Restricts certain functions to be callable only by the contract owner.
+- **`ERC20`**: Implements the standard ERC20 token functionality.
+- **`ERC20Burnable`**: Adds the ability for users to burn their tokens.
+- **`Ownable`**: Restricts certain functions (like `mint()`) to the owner of the contract.
 
 ### Functions
 
-1. **`mint(address _address, uint _value)`**:
-   - Allows the owner to mint new tokens and assign them to a specified address.
+1. **`mint(address to, uint256 amount)`**:
+   - Allows the contract owner to mint new tokens and assign them to a specified address.
    - **Modifiers**: `onlyOwner`
 
-2. **`burn(uint _value)`**:
+2. **`burn(uint256 amount)`**:
    - Allows any user to burn their tokens, reducing both their balance and the total supply.
-   - **Requirements**: The user must have a sufficient balance.
+   - **Requirements**: The user must have enough balance to burn the specified amount.
 
-3. **`transfer(address _to, uint _value)`**:
-   - Allows any user to transfer their tokens to another address.
-   - **Requirements**: The sender must have a sufficient balance.
+3. **`transfer(address to, uint256 value)`**:
+   - Allows any user to transfer tokens to another address.
+   - **Requirements**: The sender must have enough balance to complete the transfer.
 
 ## Usage
 
@@ -58,7 +58,6 @@ Users can transfer tokens to other addresses using the `transfer()` function by 
 ## Security Considerations
 
 - **Ownership Control**: Only the contract owner can mint new tokens, preventing unauthorized creation of tokens.
-- **Balance Checks**: Functions like `burn()` and `transfer()` check for sufficient balances to prevent underflows and ensure users have enough tokens for their operations.
 
 ## Author
 
