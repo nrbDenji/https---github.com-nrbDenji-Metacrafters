@@ -1,41 +1,25 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+// Compatible with OpenZeppelin Contracts ^5.0.0
+pragma solidity ^0.8.20;
 
-contract myToken {
-    string public tokenName = "WILDCORES";
-    string public tokenAbbrv = "WCR";
-    uint public totalSupply = 0;
-    address public owner;
+import "@openzeppelin/contracts@5.0.2/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts@5.0.2/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts@5.0.2/access/Ownable.sol";
 
-    mapping(address => uint) public balances;
+contract Wildcores is ERC20, ERC20Burnable, Ownable {
+    constructor(address initialOwner)
+        ERC20("Wildcores", "WCR")
+        Ownable(initialOwner)
+    {}
 
-    // Modifier to restrict access to the contract owner
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the contract owner can execute this function");
-        _;
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
     }
-
-    constructor() {
-        owner = msg.sender; // Set the contract deployer as the owner
-    }
-
-    // Function to mint new tokens (only owner)
-    function mint(address _address, uint _value) public onlyOwner {
-        totalSupply += _value;
-        balances[_address] += _value;
-    }
-
-    // Function to burn tokens (any user can burn)
-    function burn(uint _value) public {
-        require(balances[msg.sender] >= _value, "Insufficient balance to burn");
-        totalSupply -= _value;
-        balances[msg.sender] -= _value;
-    }
-
-    // Function to transfer tokens (any user can transfer)
-    function transfer(address _to, uint _value) public {
-        require(balances[msg.sender] >= _value, "Insufficient balance to transfer");
-        balances[msg.sender] -= _value;
-        balances[_to] += _value;
+    
+    // Standard ERC20 transfer function (any user can transfer)
+    function transfer(address _to, uint256 _value) public override returns (bool) {
+        _transfer(msg.sender, _to, _value);  // Uses the built-in _transfer function
+        return true;
     }
 }
+
