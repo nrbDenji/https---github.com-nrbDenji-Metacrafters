@@ -1,5 +1,5 @@
-import {useState, useEffect} from "react";
-import {ethers} from "ethers";
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
 
 export default function HomePage() {
@@ -7,41 +7,42 @@ export default function HomePage() {
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [dailyWithdrawn, setDailyWithdrawn] = useState(0);
+  const [dailyLimit, setDailyLimit] = useState(0);
 
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
 
-  const getWallet = async() => {
+  const getWallet = async () => {
     if (window.ethereum) {
       setEthWallet(window.ethereum);
     }
 
     if (ethWallet) {
-      const account = await ethWallet.request({method: "eth_accounts"});
+      const account = await ethWallet.request({ method: "eth_accounts" });
       handleAccount(account);
     }
-  }
+  };
 
   const handleAccount = (account) => {
     if (account) {
-      console.log ("Account connected: ", account);
+      console.log("Account connected: ", account);
       setAccount(account);
-    }
-    else {
+    } else {
       console.log("No account found");
     }
-  }
+  };
 
-  const connectAccount = async() => {
+  const connectAccount = async () => {
     if (!ethWallet) {
-      alert('MetaMask wallet is required to connect');
+      alert("MetaMask wallet is required to connect");
       return;
     }
-  
-    const accounts = await ethWallet.request({ method: 'eth_requestAccounts' });
+
+    const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts);
-    
-    // once wallet is set we can get a reference to our deployed contract
     getATMContract();
   };
 
@@ -49,69 +50,131 @@ export default function HomePage() {
     const provider = new ethers.providers.Web3Provider(ethWallet);
     const signer = provider.getSigner();
     const atmContract = new ethers.Contract(contractAddress, atmABI, signer);
- 
     setATM(atmContract);
-  }
+  };
 
-  const getBalance = async() => {
+  const getBalance = async () => {
     if (atm) {
-      setBalance((await atm.getBalance()).toNumber());
+      setBalance(ethers.utils.formatEther(await atm.getBalance()));
     }
-  }
+  };
 
-  const deposit = async() => {
+  const getDailyWithdrawalInfo = async () => {
     if (atm) {
-      let tx = await atm.deposit(1);
-      await tx.wait()
+      setDailyWithdrawn(ethers.utils.formatEther(await atm.totalWithdrawnToday()));
+      setDailyLimit(ethers.utils.formatEther(await atm.dailyWithdrawalLimit()));
+    }
+  };
+
+  const deposit = async () => {
+    if (atm && depositAmount) {
+      let tx = await atm.deposit(ethers.utils.parseEther(depositAmount));
+      await tx.wait();
       getBalance();
+      setDepositAmount("");
     }
-  }
+  };
 
-  const withdraw = async() => {
-    if (atm) {
-      let tx = await atm.withdraw(1);
-      await tx.wait()
-      getBalance();
+  const withdraw = async () => {
+    if (atm && withdrawAmount) {
+      try {
+        let tx = await atm.withdraw(ethers.utils.parseEther(withdrawAmount));
+        await tx.wait();
+        getBalance();
+        getDailyWithdrawalInfo();
+        setWithdrawAmount("");
+      } catch (error) {
+        if (error.message.includes("DailyLimitExceeded")) {
+          alert("Withdrawal exceeds daily limit.");
+        } else if (error.message.includes("InsufficientBalance")) {
+          alert("Insufficient balance.");
+        } else {
+          console.error(error);
+        }
+      }
     }
-  }
+  };
+
+  const resetDailyWithdrawal = async () => {
+    if (atm) {
+      try {
+        let tx = await atm.resetDailyWithdrawal();
+        await tx.wait();
+        getDailyWithdrawalInfo();
+        alert("Daily withdrawal total has been reset.");
+      } catch (error) {
+        console.error("Failed to reset daily withdrawal:", error);
+      }
+    }
+  };
 
   const initUser = () => {
-    // Check to see if user has Metamask
     if (!ethWallet) {
-      return <p>Please install Metamask in order to use this ATM.</p>
+      return <p>Please install Metamask in order to use this ATM.</p>;
     }
 
-    // Check to see if user is connected. If not, connect to their account
     if (!account) {
-      return <button onClick={connectAccount}>Please connect your Metamask wallet</button>
+      return <button className="btn-connect" onClick={connectAccount}>Please connect your Metamask wallet</button>;
     }
 
-    if (balance == undefined) {
+    if (balance === undefined) {
       getBalance();
+    }
+    if (dailyWithdrawn === 0 && dailyLimit === 0) {
+      getDailyWithdrawalInfo();
     }
 
     return (
-      <div>
-        <p>Your Account: {account}</p>
-        <p>Your Balance: {balance}</p>
-        <button onClick={deposit}>Deposit 1 ETH</button>
-        <button onClick={withdraw}>Withdraw 1 ETH</button>
-      </div>
-    )
-  }
+        <div className="atm-container">
+          <p><strong>Your Account:</strong> {account}</p>
+          <p><strong>Your Balance:</strong> {balance} ETH</p>
+          <p><strong>Daily Withdrawn Today:</strong> {dailyWithdrawn} ETH</p>
+          <p><strong>Daily Withdrawal Limit:</strong> {dailyLimit} ETH</p>
+          <input
+              type="text"
+              placeholder="Amount to Deposit (ETH)"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              className="input-field"
+          />
+          <button className="btn" onClick={deposit}>Deposit</button>
+          <br />
+          <input
+              type="text"
+              placeholder="Amount to Withdraw (ETH)"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="input-field"
+          />
+          <button className="btn" onClick={withdraw}>Withdraw</button>
+          <br />
+          <button className="btn-reset" onClick={resetDailyWithdrawal}>Reset Daily Withdrawal Total</button>
+        </div>
+    );
+  };
 
-  useEffect(() => {getWallet();}, []);
+  useEffect(() => {
+    getWallet();
+  }, []);
 
   return (
-    <main className="container">
-      <header><h1>Welcome to the Metacrafters ATM!</h1></header>
-      {initUser()}
-      <style jsx>{`
+      <main className="container">
+        <header>
+          <h1>Welcome to the Brian's ATM with withdrawal limit!</h1>
+        </header>
+        {initUser()}
+        <style jsx>{`
         .container {
-          text-align: center
+          text-align: center;
+          padding: 20px;
+          font-family: Arial, sans-serif;
         }
-      `}
-      </style>
-    </main>
-  )
+        .
+        h1 {
+          font-size: 2em;
+          color: #333;
+        }
+      `}</style>
+      </main>
+  );
 }
